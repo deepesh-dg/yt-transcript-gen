@@ -12,53 +12,23 @@ export async function POST(request: NextRequest) {
             status: 400,
         });
 
-    const baseUrl = "https://www.googleapis.com/youtube/v3/captions";
-    const apiUrl = `${baseUrl}?part=snippet&videoId=${videoId}&key=${process.env.GOOGLE_API_KEY}`;
-
     try {
-        const res = await fetch(apiUrl);
-        const data = await res.json();
-
-        if (data.error) {
-            return NextResponse.json(
-                makeResponse(data.error.code, data.error.message),
-                {
-                    status: data.error.code,
-                }
-            );
-        }
-
-        if (data.items && data.items.length > 0) {
-            const firstCaption = data.items[0];
-
-            const captionId = firstCaption.id;
-
-            const res = await fetch(
-                `${baseUrl}/${captionId}?key=${process.env.GOOGLE_API_KEY}`
-            );
-            const captionData = await res.json();
-
-            if (captionData.error) {
-                return NextResponse.json(
-                    makeResponse(
-                        captionData.error.code,
-                        captionData.error.message
-                    ),
-                    {
-                        status: captionData.error.code,
-                    }
-                );
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_TRANSCRIPT_URL}/?videoId=${videoId}`,
+            {
+                method: "GET",
             }
+        );
 
-            console.log({ captionData });
-
-            return NextResponse.json({ captionData });
-        }
+        const res = makeResponse(response.status, await response.json());
 
         return NextResponse.json(
-            makeResponse(404, "No caption tracks available for the video."),
+            makeResponse(
+                res.statusCode,
+                res.success ? res.data : "Something Went Wrong..."
+            ),
             {
-                status: 404,
+                status: res.statusCode,
             }
         );
     } catch (error) {

@@ -8,16 +8,22 @@ import { useEffect, useState } from "react";
 import { useCompletion } from "ai/react";
 
 export default function Home() {
-    const [transcript, setTranscript] = useState("asdf");
-    const [summary, setSummary] = useState("");
+    const [transcript, setTranscript] = useState("");
     const [url, setUrl] = useState("");
     const { toast } = useToast();
+    const [loader, setLoader] = useState(false);
 
-    const input = summary || transcript;
-
-    const { complete, completion, isLoading, error } = useCompletion({
+    const {
+        complete,
+        completion,
+        isLoading: isSummaryLoading,
+        error,
+    } = useCompletion({
         api: "/api/summary",
     });
+
+    const input = completion || transcript;
+    const isLoading = loader || isSummaryLoading;
 
     const copyToClipboard = async (text: string) => {
         try {
@@ -42,6 +48,7 @@ export default function Home() {
 
     const getTranscript = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setLoader(() => true);
 
         try {
             const res = await fetch("/api/transcript", {
@@ -59,11 +66,25 @@ export default function Home() {
                     3000
                 );
             } else {
-                setTranscript(() => data);
+                setTranscript(() =>
+                    (
+                        data as {
+                            text: string;
+                            start: number;
+                            duration: number;
+                        }[]
+                    ).reduce(
+                        (acc, curr) =>
+                            acc ? `${acc}\n${curr.text}` : curr.text,
+                        ""
+                    )
+                );
             }
         } catch (error) {
             console.log(error);
         }
+
+        setLoader(() => false);
     };
 
     const getSummary = async (inWords?: number) => {
@@ -91,10 +112,6 @@ export default function Home() {
         }
     }, [error, toast]);
 
-    useEffect(() => {
-        setSummary(completion);
-    }, [completion]);
-
     return (
         <main className="flex justify-center pt-12">
             <div className="max-w-3xl w-full">
@@ -107,7 +124,9 @@ export default function Home() {
                         placeholder="Enter Youtube URL"
                         className="min-w-96"
                     />
-                    <Button type="submit">Get Video Transcript</Button>
+                    <Button type="submit" disabled={isLoading}>
+                        Get Video Transcript
+                    </Button>
                 </form>
                 {input && (
                     <div className="mt-12 flex flex-wrap gap-6 justify-center">
