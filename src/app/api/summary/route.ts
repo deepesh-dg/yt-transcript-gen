@@ -18,13 +18,19 @@ export async function POST(req: Request) {
         });
 
     try {
-        const prompt = `Compose a ${inWords}-word summary based on the following YouTube transcript.\n${transcript}`;
+        const prompt = `My name is Hitesh Choudhary and I create youtube videos. Compose a ${inWords}-word ${
+            inWords <= 100 ? "short" : ""
+        } summary based on the following YouTube transcript. Generate summary as first person. \n${transcript}`;
 
-        const response = await openai.completions.create({
-            model: "gpt-3.5-turbo-instruct",
-            max_tokens: 400,
+        const response = await openai.chat.completions.create({
+            model: "gpt-4-0125-preview",
             stream: true,
-            prompt,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt,
+                },
+            ],
         });
 
         const stream = OpenAIStream(response);

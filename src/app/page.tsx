@@ -9,6 +9,7 @@ import { useCompletion } from "ai/react";
 
 export default function Home() {
     const [transcript, setTranscript] = useState("");
+    const [summary, setSummary] = useState("");
     const [url, setUrl] = useState("");
     const { toast } = useToast();
     const [loader, setLoader] = useState(false);
@@ -22,7 +23,7 @@ export default function Home() {
         api: "/api/summary",
     });
 
-    const input = completion || transcript;
+    const input = summary || transcript;
     const isLoading = loader || isSummaryLoading;
 
     const copyToClipboard = async (text: string) => {
@@ -66,6 +67,7 @@ export default function Home() {
                     3000
                 );
             } else {
+                setSummary(() => "");
                 setTranscript(() =>
                     (
                         data as {
@@ -111,6 +113,10 @@ export default function Home() {
             );
         }
     }, [error, toast]);
+
+    useEffect(() => {
+        setSummary((prev) => completion || prev);
+    }, [completion]);
 
     return (
         <main className="flex justify-center pt-12">
